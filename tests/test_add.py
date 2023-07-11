@@ -160,3 +160,30 @@ def test_success_has_items_add():
     items = channel.findall("item")
     assert len(items) == 4, tostring(root)
     assert_items(items, ["title", "0", "1", "2", "3"])
+
+
+def test_success_has_items_add_max():
+    root = Element("rss")
+    channel = Element("channel")
+    root.append(channel)
+    for text in range(3):
+        item = Element("item")
+        title = Element("title")
+        title.text = f"{text}"
+        link = Element("link")
+        link.text = "testlink"
+        item.append(title)
+        item.append(link)
+        channel.append(item)
+
+    added_title = Element("title")
+    added_title.text = "title"
+    added_link = Element("link")
+    added_link.text = "testlink"
+
+    add_item(
+        from_source=root, to_source=root, tags=[added_title, added_link], max_items=2
+    )
+    items = channel.findall("item")
+    assert len(items) == 2, tostring(root)
+    assert_items(items, ["title", "0"])

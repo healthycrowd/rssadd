@@ -18,7 +18,7 @@ _FEED_EMPTY = b"""<?xml version="1.0" encoding="utf-8"?>
 </rss>"""
 
 
-def add_item(from_source=None, to_source=None, tags=None):
+def add_item(from_source=None, to_source=None, tags=None, max_items=None):
     if from_source is None:
         from_source = _FEED_EMPTY
     from_type = SourceType.from_source(from_source)
@@ -29,17 +29,17 @@ def add_item(from_source=None, to_source=None, tags=None):
     else:
         tags = tags.copy()
 
-    item = Element("item")
+    new_item = Element("item")
     for tag in tags:
         if isinstance(tag, str):
             tag = fromstring(tag, parser=FeedParser)
         elif not isinstance(tag, type(Element("a"))):
             raise TypeError(f"Unexpected type {tag}")
-        item.append(tag)
-    if item.find("pubDate") is None:
+        new_item.append(tag)
+    if new_item.find("pubDate") is None:
         tag = Element("pubDate")
         tag.text = datetime.now().strftime(_PUBDATE_FORMAT)
-        item.append(tag)
+        new_item.append(tag)
 
     if from_type == SourceType.ELEMENT:
         root = from_source
@@ -52,9 +52,14 @@ def add_item(from_source=None, to_source=None, tags=None):
     channel = root.find("channel")
     first_item = channel.find("item")
     if first_item is None:
-        channel.append(item)
+        channel.append(new_item)
     else:
-        first_item.addprevious(item)
+        first_item.addprevious(new_item)
+
+    if max_items is not None:
+        items = channel.findall("item")
+        while len(items) > max_items:
+            channel.remove(items.pop(-1))
 
     kwargs = {
         "pretty_print": True,
