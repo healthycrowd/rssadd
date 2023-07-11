@@ -50,7 +50,11 @@ def add_item(from_source=None, to_source=None, tags=None):
         root = tree.getroot()
 
     channel = root.find("channel")
-    channel.append(item)
+    first_item = channel.find("item")
+    if first_item is None:
+        channel.append(item)
+    else:
+        first_item.addprevious(item)
 
     kwargs = {
         "pretty_print": True,

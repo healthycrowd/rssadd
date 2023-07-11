@@ -2,9 +2,10 @@ from datetime import datetime, date
 from tempfile import NamedTemporaryFile
 from pathlib import Path
 import pytest
-from lxml.etree import Element
+from lxml.etree import Element, tostring, fromstring
 
 from rssadd import add_item, _PUBDATE_FORMAT
+from rssadd.parser import FeedParser
 
 
 FEED_EMPTY_ADDED = """<?xml version='1.0' encoding='utf-8'?>
@@ -67,6 +68,11 @@ def pubdate(feed, pubdate=None):
     return feed.format(pubdate=pubdate).encode()
 
 
+def assert_items(items, titles):
+    for item in items:
+        assert item.find("title").text == titles.pop(0)
+
+
 def test_success_default_to_str():
     actual = add_item(tags=TAGS)
     expected = pubdate(FEED_EMPTY_ADDED)
@@ -105,7 +111,7 @@ def test_success_element_to_element():
 
     add_item(from_source=root, to_source=root, tags=[added_title])
     items = channel.findall("item")
-    assert len(items) == 2
+    assert len(items) == 2, tostring(root)
     for item in items:
         assert item.find("title").text == title.text
 
@@ -129,3 +135,28 @@ def test_fail_unknown_to():
 def test_fail_unknown_tag():
     with pytest.raises(TypeError):
         add_item(tags=[1])
+
+
+def test_success_has_items_add():
+    root = Element("rss")
+    channel = Element("channel")
+    root.append(channel)
+    for text in range(3):
+        item = Element("item")
+        title = Element("title")
+        title.text = f"{text}"
+        link = Element("link")
+        link.text = "testlink"
+        item.append(title)
+        item.append(link)
+        channel.append(item)
+
+    added_title = Element("title")
+    added_title.text = "title"
+    added_link = Element("link")
+    added_link.text = "testlink"
+
+    add_item(from_source=root, to_source=root, tags=[added_title, added_link])
+    items = channel.findall("item")
+    assert len(items) == 4, tostring(root)
+    assert_items(items, ["title", "0", "1", "2", "3"])
