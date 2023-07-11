@@ -5,7 +5,7 @@ from .parser import FeedParser
 from .source_type import SourceType
 
 
-__version__ = "0.1.0"
+__version__ = "1.0.0"
 
 _PUBDATE_FORMAT = "%a, %d %b %Y %H:%M:%S %z"
 _FEED_EMPTY = b"""<?xml version="1.0" encoding="utf-8"?>
